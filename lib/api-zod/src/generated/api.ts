@@ -14,3 +14,17 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Sends a message and conversation history to the AI agent. Returns a streaming SSE response.
+ * @summary Send a chat message to the OBSIDIAN AI agent
+ */
+export const SendChatMessageBody = zod.object({
+  message: zod.string(),
+  history: zod.array(
+    zod.object({
+      role: zod.enum(["user", "assistant", "system"]),
+      content: zod.string(),
+    }),
+  ),
+});
