@@ -1,0 +1,511 @@
+## File 10 — `src/parser.rs`
+
+```rust
+use crate::ast::*;
+use crate::diag::{DiagCtx, Diagnostic};
+use crate::span::Span;
+use crate::token::{Keyword, Op, Punct, Token, TokenKind};
+
+pub struct Parser {
+    tokens: Vec<Token>,
+    i: usize,
+}
+
+impl Parser {
+    pub fn new(tokens: Vec<Token>) -> Self {
+        Self { tokens, i: 0 }
+    }
+
+    fn at_end(&self) -> bool {
+        matches!(self.peek().kind, TokenKind::Eof)
+    }
+
+    fn peek(&self) -> &Token {
+        &self.tokens[self.i]
+    }
+
+    fn peek_kind(&self) -> &TokenKind {
+        &self.peek().kind
+    }
+
+    fn bump(&mut self) -> Token {
+        let t = self.tokens[self.i].clone();
+        self.i = (self.i + 1).min(self.tokens.len().saturating_sub(1));
+        t
+    }
+
+    fn expect_punct(&mut self, diags: &mut DiagCtx, p: Punct, what: &'static str) -> Span {
+        let tok = self.peek().clone();
+        match tok.kind {
+            TokenKind::Punct(pp) if pp == p => {
+                self.bump();
+                tok.span
+            }
+            _ => {
+                diags.push(Diagnostic::error(
+                    format!("expected {}", what),
+                    Some(tok.span),
+                ));
+                tok.span
+            }
+        }
+    }
+
+    fn expect_keyword(&mut self, diags: &mut DiagCtx, k: Keyword, what: &'static str) -> Span {
+        let tok = self.peek().clone();
+        match tok.kind {
+            TokenKind::Keyword(kk) if kk == k => {
+                self.bump();
+                tok.span
+            }
+            _ => {
+                diags.push(Diagnostic::error(
+                    format!("expected {}", what),
+                    Some(tok.span),
+                ));
+                tok.span
+            }
+        }
+    }
+
+    fn eat_punct(&mut self, p: Punct) -> Option<Span> {
+        let tok = self.peek().clone();
+        if matches!(tok.kind, TokenKind::Punct(pp) if pp == p) {
+            self.bump();
+            Some(tok.span)
+        } else {
+            None
+        }
+    }
+
+    fn eat_op(&mut self, o: Op) -> Option<Span> {
+        let tok = self.peek().clone();
+        if matches!(tok.kind, TokenKind::Op(oo) if oo == o) {
+            self.bump();
+            Some(tok.span)
+        } else {
+            None
+        }
+    }
+
+    fn eat_keyword(&mut self, k: Keyword) -> Option<Span> {
+        let tok = self.peek().clone();
+        if matches!(tok.kind, TokenKind::Keyword(kk) if kk == k) {
+            self.bump();
+            Some(tok.span)
+        } else {
+            None
+        }
+    }
+
+    pub fn parse_module(&mut self, diags: &mut DiagCtx) -> Module {
+        let mut items = Vec::new();
+        while !self.at_end() {
+            if let Some(item) = self.parse_item(diags) {
+                items.push(item);
+            } else {
+                // error recovery: skip one token
+                self.bump();
+            }
+        }
+        Module { items }
+    }
+
+    fn parse_item(&mut self, diags: &mut DiagCtx) -> Option<Item> {
+        match self.peek_kind() {
+            TokenKind::Keyword(Keyword::Fn) => Some(Item::Fn(self.parse_fn(diags))),
+            _ => {
+                diags.push(Diagnostic::error("expected item (e.g. fn)", Some(self.peek().span)));
+                None
+            }
+        }
+    }
+
+    fn parse_fn(&mut self, diags: &mut DiagCtx) -> FnItem {
+        let fn_span = self.expect_keyword(diags, Keyword::Fn, "`fn`");
+
+        let name_tok = self.bump();
+        let name = match name_tok.kind {
+            TokenKind::Ident(s) => s,
+            _ => {
+                diags.push(Diagnostic::error("expected function name", Some(name_tok.span)));
+                "<error>".to_string()
+            }
+        };
+
+        self.expect_punct(diags, Punct::LParen, "`(`");
+
+        let mut params = Vec::new();
+        if self.eat_punct(Punct::RParen).is_none() {
+            loop {
+                let p_name_tok = self.bump();
+                let p_name = match p_name_tok.kind {
+                    TokenKind::Ident(s) => s,
+                    _ => {
+                        diags.push(Diagnostic::error("expected parameter name", Some(p_name_tok.span)));
+                        "<error>".to_string()
+                    }
+                };
+
+                let mut ty = None;
+                if self.eat_punct(Punct::Colon).is_some() {
+                    ty = Some(self.parse_type_ref(diags));
+                }
+
+                let span = p_name_tok.span.merge(ty.as_ref().map(type_span).unwrap_or(p_name_tok.span));
+                params.push(Param { name: p_name, ty, span });
+
+                if self.eat_punct(Punct::Comma).is_some() {
+                    continue;
+                }
+                self.expect_punct(diags, Punct::RParen, "`)`");
+                break;
+            }
+        }
+
+        let mut ret_ty = None;
+        if self.eat_punct(Punct::Arrow).is_some() {
+            ret_ty = Some(self.parse_type_ref(diags));
+        }
+
+        let body = self.parse_block(diags);
+        let span = fn_span.merge(body.span);
+        FnItem { name, params, ret_ty, body, span }
+    }
+
+    fn parse_type_ref(&mut self, diags: &mut DiagCtx) -> TypeRef {
+        let tok = self.bump();
+        match tok.kind {
+            TokenKind::Ident(name) => TypeRef::Named { name, span: tok.span },
+            _ => {
+                diags.push(Diagnostic::error("expected type name", Some(tok.span)));
+                TypeRef::Named { name: "<error>".to_string(), span: tok.span }
+            }
+        }
+    }
+
+    fn parse_block(&mut self, diags: &mut DiagCtx) -> Block {
+        let l = self.expect_punct(diags, Punct::LBrace, "`{`");
+        let mut stmts = Vec::new();
+        while self.eat_punct(Punct::RBrace).is_none() && !self.at_end() {
+            if let Some(s) = self.parse_stmt(diags) {
+                stmts.push(s);
+            } else {
+                self.bump();
+            }
+        }
+        let end = if let Some(last) = stmts.last() {
+            stmt_span(last)
+        } else {
+            l
+        };
+        Block { stmts, span: l.merge(end) }
+    }
+
+    fn parse_stmt(&mut self, diags: &mut DiagCtx) -> Option<Stmt> {
+        if self.eat_keyword(Keyword::Let).is_some() {
+            return Some(self.parse_let(diags));
+        }
+        if self.eat_keyword(Keyword::Return).is_some() {
+            return Some(self.parse_return(diags));
+        }
+        if self.eat_keyword(Keyword::While).is_some() {
+            return Some(self.parse_while(diags));
+        }
+        if self.eat_keyword(Keyword::If).is_some() {
+            return Some(self.parse_if(diags));
+        }
+
+        let expr = self.parse_expr(diags, 0);
+        let semi = self.expect_punct(diags, Punct::Semi, "`;`");
+        Some(Stmt::Expr { span: expr.span().merge(semi), expr })
+    }
+
+    fn parse_let(&mut self, diags: &mut DiagCtx) -> Stmt {
+        let name_tok = self.bump();
+        let name = match name_tok.kind {
+            TokenKind::Ident(s) => s,
+            _ => {
+                diags.push(Diagnostic::error("expected identifier after let", Some(name_tok.span)));
+                "<error>".to_string()
+            }
+        };
+
+        let mut ty = None;
+        if self.eat_punct(Punct::Colon).is_some() {
+            ty = Some(self.parse_type_ref(diags));
+        }
+
+        self.expect_op(diags, Op::Eq, "`=`");
+        let init = self.parse_expr(diags, 0);
+        let semi = self.expect_punct(diags, Punct::Semi, "`;`");
+
+        let span = name_tok.span.merge(semi);
+        Stmt::Let { name, ty, init, span }
+    }
+
+    fn parse_return(&mut self, diags: &mut DiagCtx) -> Stmt {
+        let start = self.peek().span;
+        if self.eat_punct(Punct::Semi).is_some() {
+            return Stmt::Return { expr: None, span: start };
+        }
+        let expr = self.parse_expr(diags, 0);
+        let semi = self.expect_punct(diags, Punct::Semi, "`;`");
+        Stmt::Return { expr: Some(expr), span: start.merge(semi) }
+    }
+
+    fn parse_while(&mut self, diags: &mut DiagCtx) -> Stmt {
+        let cond = self.parse_expr(diags, 0);
+        let body = self.parse_block(diags);
+        let span = cond.span().merge(body.span);
+        Stmt::While { cond, body, span }
+    }
+
+    fn parse_if(&mut self, diags: &mut DiagCtx) -> Stmt {
+        let cond = self.parse_expr(diags, 0);
+        let then_blk = self.parse_block(diags);
+        let else_blk = if self.eat_keyword(Keyword::Else).is_some() {
+            Some(self.parse_block(diags))
+        } else {
+            None
+        };
+
+        let mut span = cond.span().merge(then_blk.span);
+        if let Some(b) = &else_blk {
+            span = span.merge(b.span);
+        }
+
+        Stmt::If { cond, then_blk, else_blk, span }
+    }
+
+    fn expect_op(&mut self, diags: &mut DiagCtx, o: Op, what: &'static str) -> Span {
+        let tok = self.peek().clone();
+        match tok.kind {
+            TokenKind::Op(oo) if oo == o => {
+                self.bump();
+                tok.span
+            }
+            _ => {
+                diags.push(Diagnostic::error(format!("expected {}", what), Some(tok.span)));
+                tok.span
+            }
+        }
+    }
+
+    // Pratt parser entry
+    fn parse_expr(&mut self, diags: &mut DiagCtx, min_bp: u8) -> Expr {
+        let mut lhs = self.parse_prefix(diags);
+
+        loop {
+            let (op, l_bp, r_bp) = match infix_binding_power(self.peek_kind()) {
+                Some(x) => x,
+                None => break,
+            };
+            if l_bp < min_bp {
+                break;
+            }
+
+            let op_tok = self.bump();
+            let rhs = self.parse_expr(diags, r_bp);
+            let span = lhs.span().merge(rhs.span());
+
+            lhs = Expr::Binary {
+                op,
+                left: Box::new(lhs),
+                right: Box::new(rhs),
+                span: span.merge(op_tok.span),
+            };
+        }
+
+        lhs
+    }
+
+    fn parse_prefix(&mut self, diags: &mut DiagCtx) -> Expr {
+        let tok = self.bump();
+        match tok.kind {
+            TokenKind::Int(n) => Expr::Int { value: n, span: tok.span },
+            TokenKind::Str(s) => Expr::Str { value: s, span: tok.span },
+            TokenKind::Keyword(Keyword::True) => Expr::Bool { value: true, span: tok.span },
+            TokenKind::Keyword(Keyword::False) => Expr::Bool { value: false, span: tok.span },
+            TokenKind::Ident(name) => {
+                // call or plain identifier
+                if self.eat_punct(Punct::LParen).is_some() {
+                    let mut args = Vec::new();
+                    if self.eat_punct(Punct::RParen).is_none() {
+                        loop {
+                            args.push(self.parse_expr(diags, 0));
+                            if self.eat_punct(Punct::Comma).is_some() {
+                                continue;
+                            }
+                            self.expect_punct(diags, Punct::RParen, "`)`");
+                            break;
+                        }
+                    }
+                    let end = args.last().map(|e| e.span()).unwrap_or(tok.span);
+                    Expr::Call {
+                        callee: Box::new(Expr::Ident { name, span: tok.span }),
+                        args,
+                        span: tok.span.merge(end),
+                    }
+                } else {
+                    Expr::Ident { name, span: tok.span }
+                }
+            }
+            TokenKind::Op(Op::Minus) => {
+                let rhs = self.parse_expr(diags, 100);
+                Expr::Unary { op: UnOp::Neg, span: tok.span.merge(rhs.span()), expr: Box::new(rhs) }
+            }
+            TokenKind::Op(Op::Bang) => {
+                let rhs = self.parse_expr(diags, 100);
+                Expr::Unary { op: UnOp::Not, span: tok.span.merge(rhs.span()), expr: Box::new(rhs) }
+            }
+            TokenKind::Punct(Punct::LParen) => {
+                let e = self.parse_expr(diags, 0);
+                self.expect_punct(diags, Punct::RParen, "`)`");
+                e
+            }
+            TokenKind::Punct(Punct::LBrace) => {
+                // we consumed '{' already, so parse block body until '}'
+                self.i -= 1; // put back '{' so parse_block can consume it
+                let b = self.parse_block(diags);
+                Expr::Block { span: b.span, block: b }
+            }
+            other => {
+                diags.push(Diagnostic::error(
+                    format!("unexpected token in expression: {:?}", other),
+                    Some(tok.span),
+                ));
+                Expr::Int { value: 0, span: tok.span }
+            }
+        }
+    }
+}
+
+// precedence table
+fn infix_binding_power(k: &TokenKind) -> Option<(BinOp, u8, u8)> {
+    match k {
+        TokenKind::Op(Op::Eq) => Some((BinOp::Assign, 1, 0)), // right-assoc-ish (very loose)
+        TokenKind::Op(Op::OrOr) => Some((BinOp::OrOr, 2, 3)),
+        TokenKind::Op(Op::AndAnd) => Some((BinOp::AndAnd, 4, 5)),
+        TokenKind::Op(Op::EqEq) => Some((BinOp::EqEq, 6, 7)),
+        TokenKind::Op(Op::Ne) => Some((BinOp::Ne, 6, 7)),
+        TokenKind::Op(Op::Lt) => Some((BinOp::Lt, 8, 9)),
+        TokenKind::Op(Op::Le) => Some((BinOp::Le, 8, 9)),
+        TokenKind::Op(Op::Gt) => Some((BinOp::Gt, 8, 9)),
+        TokenKind::Op(Op::Ge) => Some((BinOp::Ge, 8, 9)),
+        TokenKind::Op(Op::Plus) => Some((BinOp::Add, 10, 11)),
+        TokenKind::Op(Op::Minus) => Some((BinOp::Sub, 10, 11)),
+        TokenKind::Op(Op::Star) => Some((BinOp::Mul, 12, 13)),
+        TokenKind::Op(Op::Slash) => Some((BinOp::Div, 12, 13)),
+        TokenKind::Op(Op::Percent) => Some((BinOp::Mod, 12, 13)),
+        _ => None,
+    }
+}
+
+// small helpers so parser.rs stays readable
+fn type_span(t: &TypeRef) -> Span {
+    match t {
+        TypeRef::Named { span, .. } => *span,
+    }
+}
+
+fn stmt_span(s: &Stmt) -> Span {
+    match s {
+        Stmt::Let { span, .. } => *span,
+        Stmt::Expr { span, .. } => *span,
+        Stmt::Return { span, .. } => *span,
+        Stmt::While { span, .. } => *span,
+        Stmt::If { span, .. } => *span,
+    }
+}
+```
+
+### Line-by-line plain English (explanation)
+This file is long; I’ll keep it “each line” but grouped where repeated patterns occur. If you want, I can reprint it again with a comment after *every single line* in the next message.
+
+#### Imports and struct
+1. `use crate::ast::*;` brings in all AST types.
+2. `use crate::diag::{...};` lets parser report errors.
+3. `use crate::span::Span;` used by helper functions.
+4. `use crate::token::{...};` token kinds drive parsing decisions.
+5. `pub struct Parser { tokens, i }` stores the whole token list and current index.
+
+#### Basic cursor operations
+6. `new` stores tokens and sets position to 0.
+7. `at_end` checks if current token is EOF.
+8. `peek` returns current token by reference.
+9. `peek_kind` returns its kind.
+10. `bump` clones current token and advances index, clamping at end.
+
+#### Expect/eat helpers
+11. `expect_punct` consumes a punctuation token or emits an error if it’s missing.
+12. `expect_keyword` same idea for keywords.
+13. `eat_punct/eat_op/eat_keyword` attempt to consume; return `Some(span)` if present.
+
+#### Module + item parsing
+14. `parse_module` keeps parsing items until EOF. If something fails, it skips one token to recover.
+15. `parse_item` currently only accepts `fn`.
+
+#### Function parsing
+16. `parse_fn` reads `fn`, the function name, parameter list, optional `-> return_type`, then the body block.
+17. Parameter loop parses `name [: type]?` separated by commas.
+
+#### Types
+18. `parse_type_ref` currently accepts only a named type like `i32` or `string`.
+
+#### Block and statements
+19. `parse_block` reads `{`, then statements until `}`.
+20. `parse_stmt` dispatches to `let/return/while/if` or parses an expression statement `expr;`.
+21. `parse_let` parses `let name [: type]? = expr;`.
+22. `parse_return` parses `return;`
+## Efficiency: what will be fast and what won’t
+
+### 1) Runtime efficiency (your choice of **native LLVM codegen**)
+If we complete the pipeline (type inference → monomorphized primitives → LLVM IR → `opt`-level optimizations), OBSIDIAN can be **close to C/Rust** for code that is:
+- numeric / control-flow heavy
+- mostly using primitive types (`i64`, `bool`, pointers)
+- not allocating tons of heap objects
+
+Typical outcome for a small native-LLVM language is **within ~1.1× to 2× of optimized C** on many benchmarks *if* you avoid a heavy runtime and keep values unboxed.
+
+What will decide it:
+- **Unboxed primitives** (no “everything is an object”)
+- **Static typing** (lets LLVM optimize)
+- **Calling convention + inlining** (LLVM can inline small functions)
+- **Memory model** (GC/RC/arena/ownership impacts speed a lot)
+
+### 2) Compile-time efficiency (front-end you’ve seen so far)
+Your current frontend is already basically:
+- Lexer: **O(n)** over bytes
+- Parser (Pratt): **O(t)** over tokens
+
+So compile time will be “fine” for small/medium programs. The main compile-time costs later will be:
+- allocations (Strings in tokens/AST)
+- type inference (usually near-linear for HM-style, but can grow with complex constraints)
+- LLVM optimization passes (can dominate compile time)
+
+### 3) The biggest current inefficiencies (as written today)
+Right now, this code is a **compiler skeleton**, not a finished optimizing compiler. These are the main inefficiencies that will exist until we improve them:
+
+- **Token cloning** in `bump()` (clones `String` identifiers/strings)  
+  Fix: store tokens by reference/index, or intern strings (`Arc<str>` + interner).
+
+- **AST stores owned Strings everywhere**  
+  Fix: string interning so identifiers are small IDs, faster compares, less memory.
+
+- **No typed IR yet**  
+  Until we have typed lowering, codegen may box values or insert runtime checks (slow).  
+  We’ll avoid that by making primitives unboxed and codegen direct LLVM integer ops.
+
+### 4) Your “binary halves + encryption” feature impact
+- If you use it only for **data** (strings you explicitly seal/open), normal code stays fast.
+- If you try to make the *whole language syntax* “encrypted/encoded”, compile time will increase and tooling becomes harder—but runtime can still be fast once compiled.
+- Real encryption (XChaCha20-Poly1305) is fast, but it’s still **extra CPU work**: great for security, not free.
+
+---
+
+## Bottom line
+- **Goal runtime:** near C/Rust for primitive-heavy code once LLVM codegen + typing is finished.
+- **Today:** not measurable yet because we haven’t implemented the backend; current code only affects compile-time and parsing.
+
+If you tell me your target domain (games? scientific computing? system tools? scripting?), I’ll set concrete performance targets and design choices (GC vs no-GC, strings, arrays, FFI) to hit them.
