@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Cinzel+Decorative:wght@400;700;900&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -161,4 +161,117 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-white/20;
+}
+
+.greek-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-weight: 900;
+  color: transparent;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(200, 220, 255, 0.95) 20%,
+    rgba(140, 170, 255, 0.9) 40%,
+    rgba(100, 140, 240, 0.85) 60%,
+    rgba(80, 100, 200, 0.6) 80%,
+    rgba(60, 60, 150, 0.3) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 30px rgba(120, 160, 255, 0.4))
+         drop-shadow(0 0 60px rgba(80, 120, 255, 0.2))
+         drop-shadow(0 4px 8px rgba(0, 0, 0, 0.8));
+  text-shadow: none;
+  position: relative;
+  z-index: 2;
+  animation: greekFloat 6s ease-in-out infinite;
+}
+
+.greek-title-shadow {
+  font-family: 'Cinzel Decorative', serif;
+  font-weight: 900;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(120, 160, 255, 0.15);
+  filter: blur(8px);
+  z-index: 1;
+  animation: greekFloat 6s ease-in-out infinite reverse;
+}
+
+@keyframes greekFloat {
+  0%, 100% {
+    transform: translateY(0) perspective(800px) rotateX(2deg);
+  }
+  50% {
+    transform: translateY(-8px) perspective(800px) rotateX(-2deg);
+  }
+}
+
+.cta-button {
+  position: relative;
+  padding: 18px 44px;
+  background: rgba(100, 140, 255, 0.12);
+  border: 1px solid rgba(160, 200, 255, 0.35);
+  border-radius: 9999px;
+  cursor: pointer;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 30px rgba(100, 150, 255, 0.1), inset 0 0 20px rgba(140, 180, 255, 0.05);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cta-button:hover {
+  background: rgba(100, 140, 255, 0.15);
+  border-color: rgba(160, 200, 255, 0.5);
+  transform: scale(1.05);
+  box-shadow: 0 0 40px rgba(100, 150, 255, 0.2), 0 0 80px rgba(80, 120, 255, 0.1);
+}
+
+.cta-button:active {
+  transform: scale(0.98);
+}
+
+.cta-text {
+  font-family: 'Cinzel Decorative', serif;
+  font-weight: 700;
+  font-size: clamp(0.7rem, 2vw, 0.9rem);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(200, 220, 255, 0.9);
+  position: relative;
+  z-index: 2;
+}
+
+.cta-glow {
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, transparent, rgba(140, 180, 255, 0.15), transparent);
+  animation: ctaSweep 3s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes ctaSweep {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.landing-fade-in {
+  animation: landingFadeIn 1.5s ease-out both;
+}
+
+@keyframes landingFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
