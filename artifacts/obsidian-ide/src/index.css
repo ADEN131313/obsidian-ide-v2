@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Cinzel+Decorative:wght@400;700;900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Cinzel+Decorative:wght@400;700;900&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -85,9 +85,9 @@
   --sidebar-accent-foreground: 190 10% 90%;
   --sidebar-ring: 270 100% 65%;
 
-  --app-font-sans: 'Space Mono', monospace;
+  --app-font-sans: "Space Mono", monospace;
   --app-font-serif: Georgia, serif;
-  --app-font-mono: 'Space Mono', monospace;
+  --app-font-mono: "Space Mono", monospace;
   --radius: 0.75rem;
 }
 
@@ -140,13 +140,30 @@
   text-shadow: 0 0 10px hsl(var(--secondary) / 0.5);
 }
 
-.syntax-keyword { @apply text-primary font-bold; }
-.syntax-type { @apply text-secondary font-bold; }
-.syntax-string { @apply text-green-400; }
-.syntax-number { @apply text-orange-400; }
-.syntax-comment { @apply text-muted-foreground italic; }
-.syntax-op { @apply text-pink-400; }
-.syntax-default { @apply text-foreground; }
+.syntax-keyword {
+  @apply text-primary font-bold;
+}
+.syntax-type {
+  @apply text-secondary font-bold;
+}
+.syntax-string {
+  @apply text-green-400;
+}
+.syntax-number {
+  @apply text-orange-400;
+}
+.syntax-comment {
+  @apply text-muted-foreground italic;
+}
+.syntax-op {
+  @apply text-pink-400;
+}
+.syntax-fn {
+  @apply text-blue-400;
+}
+.syntax-default {
+  @apply text-foreground;
+}
 
 /* Custom scrollbar for glass panels */
 ::-webkit-scrollbar {
@@ -164,7 +181,7 @@
 }
 
 .greek-title {
-  font-family: 'Cinzel Decorative', serif;
+  font-family: "Cinzel Decorative", serif;
   font-weight: 900;
   color: transparent;
   background: linear-gradient(
@@ -180,8 +197,8 @@
   background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 0 30px rgba(120, 160, 255, 0.4))
-         drop-shadow(0 0 60px rgba(80, 120, 255, 0.2))
-         drop-shadow(0 4px 8px rgba(0, 0, 0, 0.8));
+    drop-shadow(0 0 60px rgba(80, 120, 255, 0.2))
+    drop-shadow(0 4px 8px rgba(0, 0, 0, 0.8));
   text-shadow: none;
   position: relative;
   z-index: 2;
@@ -189,7 +206,7 @@
 }
 
 .greek-title-shadow {
-  font-family: 'Cinzel Decorative', serif;
+  font-family: "Cinzel Decorative", serif;
   font-weight: 900;
   position: absolute;
   top: 0;
@@ -203,7 +220,8 @@
 }
 
 @keyframes greekFloat {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0) perspective(800px) rotateX(2deg);
   }
   50% {
@@ -220,7 +238,9 @@
   cursor: pointer;
   overflow: hidden;
   backdrop-filter: blur(12px);
-  box-shadow: 0 0 30px rgba(100, 150, 255, 0.1), inset 0 0 20px rgba(140, 180, 255, 0.05);
+  box-shadow:
+    0 0 30px rgba(100, 150, 255, 0.1),
+    inset 0 0 20px rgba(140, 180, 255, 0.05);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -228,7 +248,9 @@
   background: rgba(100, 140, 255, 0.15);
   border-color: rgba(160, 200, 255, 0.5);
   transform: scale(1.05);
-  box-shadow: 0 0 40px rgba(100, 150, 255, 0.2), 0 0 80px rgba(80, 120, 255, 0.1);
+  box-shadow:
+    0 0 40px rgba(100, 150, 255, 0.2),
+    0 0 80px rgba(80, 120, 255, 0.1);
 }
 
 .cta-button:active {
@@ -236,7 +258,7 @@
 }
 
 .cta-text {
-  font-family: 'Cinzel Decorative', serif;
+  font-family: "Cinzel Decorative", serif;
   font-weight: 700;
   font-size: clamp(0.7rem, 2vw, 0.9rem);
   letter-spacing: 0.15em;
@@ -250,15 +272,26 @@
   position: absolute;
   inset: -2px;
   border-radius: 9999px;
-  background: linear-gradient(90deg, transparent, rgba(140, 180, 255, 0.15), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(140, 180, 255, 0.15),
+    transparent
+  );
   animation: ctaSweep 3s ease-in-out infinite;
   z-index: 1;
 }
 
 @keyframes ctaSweep {
-  0% { transform: translateX(-100%); }
-  50% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
 }
 
 .landing-fade-in {
