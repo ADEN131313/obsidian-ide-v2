@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: obsidian
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  api-server:
+    build: ./artifacts/api-server
+    environment:
+      DATABASE_URL: postgresql://user:password@db:5432/obsidian
+      JWT_SECRET: your-jwt-secret
+      OBSIDIAN_AGENT_API_KEY: your-api-key
+      SENTRY_DSN: your-sentry-dsn
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+
+  obsidian-ide:
+    build: ./artifacts/obsidian-ide
+    environment:
+      VITE_API_URL: http://localhost:3000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api-server
+
+volumes:
+  postgres_data:

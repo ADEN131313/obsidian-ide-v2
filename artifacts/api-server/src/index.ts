@@ -1,25 +1,44 @@
-import app from "./app";
-import { logger } from "./lib/logger";
+import * as Sentry from "@sentry/node";
+import express from "express";
+import cors from "cors";
+import pinoHttp from "pino-http";
+import { db } from "@workspace/db";
+import routes from "./routes/index";
+import { errorHandler } from "./middlewares/error";
 
-const rawPort = process.env["PORT"];
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  environment: process.env.NODE_ENV || "development",
+});
 
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
-}
+const app = express();
+const port = process.env.PORT || 3000;
 
-const port = Number(rawPort);
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(pinoHttp({ level: process.env.LOG_LEVEL || "info" }));
 
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
+// Routes
+app.use("/api", routes);
 
-app.listen(port, (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
-    process.exit(1);
+// Sentry error handler
+app.use(Sentry.expressIntegration());
+
+// Error handling
+app.use(errorHandler);
+
+// Health check with DB
+app.get("/api/healthz", async (req, res) => {
+  try {
+    await db.execute("SELECT 1");
+    res.json({ status: "ok", database: "connected" });
+  } catch (error) {
+    req.log?.error?.({ err: error }, "Database health check failed");
+    res.status(503).json({ status: "error", database: "disconnected" });
   }
+});
 
-  logger.info({ port }, "Server listening");
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });

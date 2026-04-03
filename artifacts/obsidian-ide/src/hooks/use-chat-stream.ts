@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import { useAuth } from "./useAuth";
 
 export type ChatMessage = {
   role: "user" | "assistant";
@@ -6,6 +7,7 @@ export type ChatMessage = {
 };
 
 export function useChatStream() {
+  const { token } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,14 +26,20 @@ export function useChatStream() {
     setError(null);
 
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: content,
-          history: currentMessages,
-        }),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api/chat`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            message: content,
+            history: currentMessages,
+          }),
+        },
+      );
 
       if (!response.ok) {
         throw new Error("Failed to send message");
@@ -55,7 +63,9 @@ export function useChatStream() {
           buffer = events.pop() || "";
 
           for (const event of events) {
-            const lines = event.split("\n").filter((l) => l.startsWith("data: "));
+            const lines = event
+              .split("\n")
+              .filter((l) => l.startsWith("data: "));
             for (const line of lines) {
               try {
                 const data = JSON.parse(line.slice(6));
