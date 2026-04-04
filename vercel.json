@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd apps/web && pnpm build",
+  "buildCommand": "pnpm install && pnpm --filter @obsidian/web build",
   "outputDirectory": "apps/web/dist",
   "framework": "vite",
   "installCommand": "pnpm install",
@@ -8,6 +8,10 @@
     {
       "source": "/api/(.*)",
       "destination": "https://obsidian-api.vercel.app/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [

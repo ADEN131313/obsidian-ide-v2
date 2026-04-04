@@ -1,0 +1,22 @@
+[build]
+  command = "cd apps/web && pnpm build"
+  publish = "apps/web/dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--version"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://obsidian-api.vercel.app/api/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[dev]
+  command = "pnpm dev"
+  targetPort = 5173
+  publish = "apps/web/dist"
