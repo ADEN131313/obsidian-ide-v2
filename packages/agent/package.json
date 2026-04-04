@@ -1,0 +1,31 @@
+{
+  "name": "@obsidian/agent",
+  "version": "1.0.0",
+  "description": "Advanced AI agent with tool calling and multi-agent orchestration",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@obsidian/core": "workspace:*",
+    "@obsidian/shared": "workspace:*",
+    "@obsidian/db": "workspace:*",
+    "openai": "^4.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "~5.9.2",
+    "vitest": "^2.0.0"
+  }
+}
