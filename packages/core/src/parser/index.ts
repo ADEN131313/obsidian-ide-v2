@@ -1,2 +1,2 @@
-export * from "./parser/lexer.js";
-export * from "./parser/parser.js";
+export * from "./lexer.js";
+export * from "./parser.js";
