@@ -89,8 +89,14 @@ export class AgentOrchestrator {
           temperature: agentConfig.temperature,
           max_tokens: agentConfig.maxTokens,
           messages: [
-            { role: "system", content: this.buildSystemPrompt(agentConfig) },
-            ...this.conversationHistory,
+            { role: "system", content: this.buildSystemPrompt(agentConfig) } as any,
+            ...this.conversationHistory.map(m => ({
+              role: m.role === "tool" ? "assistant" : m.role,
+              content: m.content,
+              name: m.name,
+              tool_calls: m.tool_calls,
+              tool_call_id: m.tool_call_id,
+            } as any)),
           ],
           tools: this.toolRegistry.getOpenAITools(),
           tool_choice: "auto",

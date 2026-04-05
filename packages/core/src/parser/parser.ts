@@ -335,7 +335,10 @@ export class Parser {
         type: "UnaryExpression",
         operator: op.value,
         operand,
-        loc: { start: op, end: operand.loc.end }
+        loc: { 
+          start: { line: op.line, column: op.column, offset: op.start }, 
+          end: operand.loc.end 
+        }
       };
     }
 
@@ -351,16 +354,19 @@ export class Parser {
       const args = this.parseArguments();
       if (!this.expectPunctuation(")")) return null;
 
-      if (expr.type !== "Identifier") {
-        this.addError("Callee must be an identifier", expr.loc.start.line, expr.loc.start.column, "error");
+      if (expr!.type !== "Identifier") {
+        this.addError("Callee must be an identifier", expr!.loc.start.line, expr!.loc.start.column, "error");
         return null;
       }
 
       expr = {
         type: "CallExpression",
-        callee: expr as IdentifierExpression,
+        callee: expr! as IdentifierExpression,
         arguments: args,
-        loc: { start: expr.loc.start, end: this.previous() }
+        loc: { 
+          start: expr!.loc.start, 
+          end: { line: this.previous().line, column: this.previous().column, offset: this.previous().end } 
+        }
       };
     }
 

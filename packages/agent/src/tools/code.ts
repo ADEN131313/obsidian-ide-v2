@@ -10,13 +10,18 @@ const ExecuteCodeSchema = z.object({
   timeout: z.number().optional().describe("Timeout in milliseconds (default: 5000)"),
 });
 
+interface ExecutionResult {
+  output: string;
+  error?: string;
+}
+
 const AnalyzeCodeSchema = z.object({
   code: z.string().describe("Code to analyze"),
   type: z.enum(["lint", "complexity", "security"]).describe("Type of analysis"),
 });
 
 export function createCodeExecutionTools(
-  executeObsidian: (code: string) => Promise<{ output: string; error?: string }>
+  executeObsidian: (code: string) => Promise<ExecutionResult>
 ): Tool[] {
   return [
     {
@@ -31,7 +36,10 @@ export function createCodeExecutionTools(
         });
         
         try {
-          const result = await Promise.race([executeObsidian(code), timeoutPromise]);
+          const result = await Promise.race<ExecutionResult>([
+            executeObsidian(code), 
+            timeoutPromise as Promise<ExecutionResult>
+          ]);
           return {
             success: !result.error,
             output: result.output,

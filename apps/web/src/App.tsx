@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Route, Switch } from "wouter";
 import { useAuthStore } from "./stores/auth";
 import { IDE } from "./pages/IDE";

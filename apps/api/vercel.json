@@ -6,6 +6,9 @@
       "use": "@vercel/node"
     }
   ],
+  "buildCommand": "npx -y pnpm@9.15.0 --filter @obsidian/api build",
+  "outputDirectory": "dist",
+  "installCommand": "npx -y pnpm@9.15.0 install --frozen-lockfile",
   "routes": [
     {
       "src": "/api/(.*)",

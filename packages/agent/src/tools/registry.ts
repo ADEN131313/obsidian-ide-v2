@@ -90,7 +90,7 @@ export class ToolRegistry {
 // Simple Zod to JSON Schema converter
 function zodToJsonSchema(schema: z.ZodSchema): Record<string, unknown> {
   // This is a simplified converter - in production, use zod-to-json-schema package
-  const def = schema._def;
+  const def = schema._def as any;
   
   if (def.typeName === "ZodObject") {
     const properties: Record<string, unknown> = {};

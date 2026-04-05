@@ -1,6 +1,7 @@
 import { pgTable, serial, text, timestamp, integer, boolean, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
+import type { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -77,24 +78,24 @@ export const files = pgTable("files", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
-// Zod schemas
-export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
-export const selectUserSchema = createSelectSchema(users);
+// Zod schemas with explicit type annotations
+export const insertUserSchema: z.ZodTypeAny = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectUserSchema: z.ZodTypeAny = createSelectSchema(users);
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 
-export const insertSessionSchema = createInsertSchema(sessions).omit({ id: true, createdAt: true });
+export const insertSessionSchema: z.ZodTypeAny = createInsertSchema(sessions).omit({ id: true, createdAt: true });
 export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
 
-export const insertConversationSchema = createInsertSchema(conversations).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertConversationSchema: z.ZodTypeAny = createInsertSchema(conversations).omit({ id: true, createdAt: true, updatedAt: true });
 export type Conversation = typeof conversations.$inferSelect;
 export type NewConversation = typeof conversations.$inferInsert;
 
-export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true });
+export const insertMessageSchema: z.ZodTypeAny = createInsertSchema(messages).omit({ id: true, createdAt: true });
 export type Message = typeof messages.$inferSelect;
 export type NewMessage = typeof messages.$inferInsert;
 
-export const insertFileSchema = createInsertSchema(files).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertFileSchema: z.ZodTypeAny = createInsertSchema(files).omit({ id: true, createdAt: true, updatedAt: true });
 export type File = typeof files.$inferSelect;
 export type NewFile = typeof files.$inferInsert;

@@ -16,7 +16,7 @@ const WriteFileSchema = z.object({
 
 const SearchFilesSchema = z.object({
   pattern: z.string().describe("Search pattern (glob or regex)"),
-  path: z.string().optional().describe("Directory to search in"),
+  searchPath: z.string().optional().describe("Directory to search in"),
 });
 
 const ListDirectorySchema = z.object({
