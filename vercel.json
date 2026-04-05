@@ -1,9 +1,9 @@
 {
   "version": 2,
-  "buildCommand": "pnpm install && pnpm --filter @obsidian/web build",
+  "buildCommand": "corepack enable && pnpm install && pnpm --filter @obsidian/web build",
   "outputDirectory": "apps/web/dist",
   "framework": "vite",
-  "installCommand": "pnpm install",
+  "installCommand": "corepack enable && pnpm install",
   "rewrites": [
     {
       "source": "/api/(.*)",
