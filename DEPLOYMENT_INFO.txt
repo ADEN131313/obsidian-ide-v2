@@ -1,0 +1,59 @@
+OBSIDIAN IDE v2 - DEPLOYMENT INFO
+=================================
+
+PROJECT LOCATION
+/Users/aden/Downloads/ob
+
+DEPLOY TO ALL PLATFORMS
+=======================
+
+1. VERCEL (Frontend)
+--------------------
+cd /Users/aden/Downloads/ob/apps/web
+npx vercel@latest deploy --prod
+
+URL: https://obsidian-ide-v2.vercel.app
+
+2. NETLIFY (Frontend)
+---------------------
+cd /Users/aden/Downloads/ob
+npx netlify-cli@latest deploy --prod --dir=apps/web/dist
+
+URL: https://obsidian-ide-v2.netlify.app
+
+3. GITHUB PAGES (Free)
+----------------------
+cd /Users/aden/Downloads/ob
+git push origin obsidian-ide
+
+Then enable at:
+https://github.com/skinnyzebra14-sudo/fluffy-couscous/settings/pages
+
+URL: https://skinnyzebra14-sudo.github.io/fluffy-couscous
+
+ENVIRONMENT VARIABLES
+=====================
+Set these in your hosting dashboard:
+- DATABASE_URL=postgresql://...
+- JWT_SECRET=your-secret-key
+- OPENAI_API_KEY=sk-...
+- VITE_API_URL=https://your-api-url
+
+WHAT'S BUILT
+============
+- Monaco Editor IDE
+- Fastify API server
+- AI agent with tool calling
+- OBSIDIAN language parser/lexer
+- Database with Drizzle ORM
+- JWT Authentication
+- File Management
+
+DEPLOYMENT CONFIGS READY
+========================
+- vercel.json
+- netlify.toml
+- .github/workflows/github-pages.yml
+- .github/workflows/deploy.yml
+
+Created: April 5, 2026

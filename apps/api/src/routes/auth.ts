@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyPluginOptions } from "fastify";
+import type { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from "fastify";
 import bcrypt from "bcryptjs";
 import { db, users, insertUserSchema, type NewUser } from "@obsidian/db";
 import { eq } from "drizzle-orm";

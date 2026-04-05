@@ -1,0 +1,59 @@
+# OBSIDIAN IDE v2 - DEPLOYMENT STATUS
+
+## GitHub Repository
+URL: https://github.com/ADEN131313/obsidian-ide-v2
+Status: ✅ CODE PUSHED SUCCESSFULLY
+
+## Deployment URLs
+
+### GitHub Pages (Auto-deploy on push)
+URL: https://ADEN131313.github.io/obsidian-ide-v2
+Status: ⚠️ Enable in Settings → Pages → GitHub Actions
+
+### Vercel
+URL: https://web-73didye8z-aden131313s-projects.vercel.app
+Status: ⚠️ Build failed (needs pnpm fix)
+Fix: Update Build Command in Vercel dashboard to:
+  corepack enable && pnpm install && pnpm --filter @obsidian/web build
+
+### Netlify
+URL: https://obsidian-ide-v2.netlify.app (pending)
+Status: ⏳ Ready to deploy
+
+## Project Location
+/Users/aden/Downloads/ob
+
+## Features Built
+✅ Monaco Editor IDE
+✅ Fastify API server  
+✅ AI agent with tool calling
+✅ OBSIDIAN language parser/lexer
+✅ Database with Drizzle ORM
+✅ JWT Authentication
+✅ File Management
+
+## To Complete Deployment
+
+1. GitHub Pages (Easiest - Free):
+   - Go to https://github.com/ADEN131313/obsidian-ide-v2/settings/pages
+   - Source: GitHub Actions
+   - Click Save
+
+2. Vercel (Fast):
+   - Go to https://vercel.com/aden131313s-projects/web
+   - Settings → Build & Development Settings
+   - Override Build Command: corepack enable && pnpm install && pnpm --filter @obsidian/web build
+   - Redeploy
+
+3. Netlify:
+   ```bash
+   cd /Users/aden/Downloads/ob
+   npx netlify-cli@latest deploy --prod --dir=apps/web/dist
+   ```
+
+## Environment Variables Needed
+- DATABASE_URL=postgresql://...
+- JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters
+- OPENAI_API_KEY=sk-...
+
+Created: April 5, 2026

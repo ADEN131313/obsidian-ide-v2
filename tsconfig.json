@@ -3,20 +3,11 @@
   "compileOnSave": false,
   "files": [],
   "references": [
-    {
-      "path": "./lib/db"
-    },
-    {
-      "path": "./lib/api-client-react"
-    },
-    {
-      "path": "./lib/api-zod"
-    },
-    {
-      "path": "./lib/integrations-openai-ai-server"
-    },
-    {
-      "path": "./lib/integrations-openai-ai-react"
-    }
+    { "path": "./packages/shared" },
+    { "path": "./packages/core" },
+    { "path": "./packages/db" },
+    { "path": "./packages/agent" },
+    { "path": "./apps/api" },
+    { "path": "./apps/web" }
   ]
 }
