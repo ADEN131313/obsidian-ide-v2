@@ -1,9 +1,9 @@
 {
   "version": 2,
-  "buildCommand": "corepack enable && pnpm install && pnpm --filter @obsidian/web build",
+  "buildCommand": "corepack enable && pnpm install --no-frozen-lockfile && pnpm --filter @obsidian/web build",
   "outputDirectory": "apps/web/dist",
   "framework": "vite",
-  "installCommand": "corepack enable && pnpm install",
+  "installCommand": "corepack enable && pnpm install --no-frozen-lockfile",
   "rewrites": [
     {
       "source": "/api/(.*)",
