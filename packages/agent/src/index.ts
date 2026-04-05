@@ -9,6 +9,7 @@ export { createTerminalTools } from "./tools/terminal.js";
 export { createGitTools } from "./tools/git.js";
 export { createDatabaseTools, type DatabaseOperations } from "./tools/database.js";
 export { createSecurityTools, SecurityManager, type SecurityPolicy, type Permission, type AuditLogEntry } from "./tools/security.js";
+export { createFeelingLuckyTools, ENHANCEMENT_TEMPLATES, detectEnhancementType } from "./tools/feeling-lucky.js";
 export { AgentOrchestrator, type AgentOrchestratorConfig, type AgentResponse, type ExecutionPlan } from "./orchestrator.js";
 
 export type ToolCall = TC;
